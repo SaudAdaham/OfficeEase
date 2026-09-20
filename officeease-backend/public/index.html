@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8" />
+<title>OfficeEase - لوحة اختبار الخدمات</title>
+<style>
+  body { font-family: Tahoma, Arial, sans-serif; background:#f4f6f8; margin:0; padding:24px; }
+  h1 { color:#1f2937; }
+  .card { background:#fff; border-radius:10px; padding:16px 20px; margin-bottom:14px; box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .card h3 { margin:0 0 6px; color:#111827; }
+  .card p { margin:0 0 10px; color:#4b5563; font-size:14px; }
+  code { background:#eef2ff; color:#3730a3; padding:2px 6px; border-radius:4px; font-size:13px; }
+  input, textarea, button { font-family:inherit; font-size:14px; }
+  input[type=file], textarea, input[type=text] { width:100%; margin-bottom:8px; padding:6px; box-sizing:border-box; }
+  button { background:#2563eb; color:#fff; border:none; padding:8px 16px; border-radius:6px; cursor:pointer; }
+  button:hover { background:#1d4ed8; }
+  pre { background:#111827; color:#a5f3fc; padding:10px; border-radius:6px; white-space:pre-wrap; word-break:break-word; max-height:220px; overflow:auto; }
+</style>
+</head>
+<body>
+  <h1>🗂️ OfficeEase — لوحة اختبار الخدمات (Prototype)</h1>
+  <p>هذه صفحة اختبار سريعة لتجربة أي خدمة عبر المتصفح مباشرة قبل ربط الواجهة الأمامية النهائية.</p>
+
+  <div class="card">
+    <h3>الخدمة 1 — مُفرّغ الجداول العربية إلى Excel</h3>
+    <p>ارفع ملف PDF يحتوي جدول عربي</p>
+    <input type="file" id="s1-file" />
+    <button onclick="callFile('s1', '/api/service1/arabic-tables-to-excel', 'file')">تشغيل</button>
+    <pre id="s1-out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>الخدمة 7 — الترجمة الذكية</h3>
+    <textarea id="s7-text" rows="3" placeholder="النص المراد ترجمته"></textarea>
+    <input type="text" id="s7-lang" placeholder="اللغة الهدف مثل: English" />
+    <button onclick="callJSON('s7', '/api/service7/translate', {text: val('s7-text'), targetLang: val('s7-lang')})">ترجم</button>
+    <pre id="s7-out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>الخدمة 12 — مقارنة عقدين (PDF Diffing)</h3>
+    <p>النسخة الأولى:</p><input type="file" id="s12-a" />
+    <p>النسخة الثانية:</p><input type="file" id="s12-b" />
+    <button onclick="callTwoFiles('s12', '/api/service12/compare-pdfs', 'fileA','s12-a','fileB','s12-b')">قارن</button>
+    <pre id="s12-out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>الخدمة 17 — تحليل مخاطر عقد</h3>
+    <input type="file" id="s17-file" />
+    <button onclick="callFile('s17', '/api/service17/contract-risk', 'file')">حلّل المخاطر</button>
+    <pre id="s17-out"></pre>
+  </div>
+
+  <div class="card">
+    <h3>📋 كل الخدمات المتاحة</h3>
+    <button onclick="listServices()">عرض القائمة الكاملة</button>
+    <pre id="list-out"></pre>
+  </div>
+
+<script>
+function val(id){ return document.getElementById(id).value; }
+
+async function callFile(prefix, url, fieldName) {
+  const fileInput = document.getElementById(prefix + '-file');
+  if (!fileInput.files[0]) return alert('اختر ملف أولاً');
+  const fd = new FormData();
+  fd.append(fieldName, fileInput.files[0]);
+  document.getElementById(prefix + '-out').textContent = 'جارِ المعالجة...';
+  try {
+    const res = await fetch(url, { method: 'POST', body: fd });
+    const data = await res.json();
+    document.getElementById(prefix + '-out').textContent = JSON.stringify(data, null, 2);
+  } catch (e) {
+    document.getElementById(prefix + '-out').textContent = 'خطأ: ' + e.message;
+  }
+}
+
+async function callTwoFiles(prefix, url, fieldA, idA, fieldB, idB) {
+  const fa = document.getElementById(idA).files[0];
+  const fb = document.getElementById(idB).files[0];
+  if (!fa || !fb) return alert('اختر الملفين');
+  const fd = new FormData();
+  fd.append(fieldA, fa);
+  fd.append(fieldB, fb);
+  document.getElementById(prefix + '-out').textContent = 'جارِ المعالجة...';
+  const res = await fetch(url, { method: 'POST', body: fd });
+  const data = await res.json();
+  document.getElementById(prefix + '-out').textContent = JSON.stringify(data, null, 2);
+}
+
+async function callJSON(prefix, url, body) {
+  document.getElementById(prefix + '-out').textContent = 'جارِ المعالجة...';
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  document.getElementById(prefix + '-out').textContent = JSON.stringify(data, null, 2);
+}
+
+async function listServices() {
+  const res = await fetch('/api/services');
+  const data = await res.json();
+  document.getElementById('list-out').textContent = JSON.stringify(data, null, 2);
+}
+</script>
+</body>
+</html>
